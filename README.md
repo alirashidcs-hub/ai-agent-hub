@@ -2,11 +2,15 @@
 
 > **An open-source visual AI Agent Builder for designing, testing, configuring, and deploying AI agents.**
 
-Open Agent Studio is a full-stack platform that provides a visual environment for building AI agents with customizable models, tools, workflows, and API deployments.
+Open Agent Studio is a full-stack platform that provides a visual environment for building and managing AI agents with customizable models, tools, workflows, and API deployments.
 
-The platform combines a visual agent builder with a streaming execution engine, model integrations, encrypted secrets, API key management, and security-focused infrastructure.
+The platform combines a visual node-based agent builder with a streaming execution engine, AI model integrations, encrypted secrets, API key management, MCP support, rate limiting, and security-focused infrastructure.
 
-**Project Status:** 🚧 Working full-stack scaffold / active development
+### 🌐 Live Demo
+
+**Try Open Agent Studio:** https://ai-agent-hub-mu.vercel.app/
+
+> 🚧 **Project Status:** Working full-stack scaffold / Active Development
 
 ---
 
@@ -18,7 +22,7 @@ The platform combines a visual agent builder with a streaming execution engine, 
 * Powered by `@xyflow/react`.
 * Configure agent workflows through connected nodes.
 * Server-side graph validation.
-* Size limits for agent configurations.
+* Configuration size limits for safer execution.
 
 ### 🧠 AI Model Integration
 
@@ -28,11 +32,11 @@ Supports configurable AI model providers including:
 * Anthropic
 * Google Gemini
 
-Provider API keys can be configured through the application's **Models** page and are encrypted before being stored.
+Provider API keys can be configured through the application's Models page and are encrypted before being stored.
 
 ### ⚡ Streaming Agent Execution
 
-* Real-time streaming execution using SSE.
+* Real-time streaming execution using Server-Sent Events (SSE).
 * Usage-based token accounting.
 * Execution deadlines.
 * Maximum-step protection.
@@ -40,47 +44,48 @@ Provider API keys can be configured through the application's **Models** page an
 
 ### 🔐 Security
 
-Security is a major focus of the project.
+Security is a major focus of Open Agent Studio.
 
 * AES-256-GCM encryption for provider keys and MCP authentication headers.
-* SHA-256 hashed API keys.
+* SHA-256 hashing for API keys.
 * HTTP-only JWT session cookies.
 * CSRF protection for Google OAuth.
 * SSRF protection for outbound requests.
 * DNS rebinding protection.
 * Redirect validation.
-* Request timeouts and response-size limits.
+* Request timeouts.
+* Response-size limits.
 * Server-side ownership validation.
 
 ### 🔑 API Key Management
 
 * Account-wide API keys.
 * Agent-scoped API keys.
-* Keys are hashed before storage.
-* Full API key is displayed only once when created.
+* API keys are hashed before storage.
+* Full API key displayed only once during creation.
 * API key revocation support.
 
 ### 🚀 Agent Deployment
 
-Deploy agents through public API endpoints:
+Agents can be deployed through public API endpoints:
 
 ```text
 /api/deploy/{slug}/run
 ```
 
-Deployed agents require an API key using:
+Deployed agents require an API key:
 
-```text
+```http
 Authorization: Bearer <api-key>
 ```
 
 ### 🔌 MCP Support
 
-The platform includes an MCP JSON-RPC client with security-hardened outbound requests.
+Open Agent Studio includes an MCP JSON-RPC client with security-hardened outbound requests.
 
 ### 🚦 Rate Limiting
 
-Redis-backed rate limiting protects:
+Redis-backed rate limiting protects sensitive operations including:
 
 * Login
 * Registration
@@ -92,20 +97,20 @@ Redis-backed rate limiting protects:
 
 ## 🛠️ Tech Stack
 
-| Technology    | Purpose                  |
-| ------------- | ------------------------ |
-| Next.js 15    | Full-stack web framework |
-| TypeScript    | Application development  |
-| React         | UI                       |
-| Tailwind CSS  | Styling                  |
-| @xyflow/react | Visual agent builder     |
-| PostgreSQL    | Database                 |
-| Prisma        | ORM                      |
-| Redis         | Rate limiting            |
-| ioredis       | Redis client             |
-| Zod           | Validation               |
-| jose          | JWT authentication       |
-| bcryptjs      | Password hashing         |
+| Technology      | Purpose                  |
+| --------------- | ------------------------ |
+| Next.js 15      | Full-stack web framework |
+| TypeScript      | Application development  |
+| React           | UI development           |
+| Tailwind CSS    | Styling                  |
+| `@xyflow/react` | Visual agent builder     |
+| PostgreSQL      | Database                 |
+| Prisma          | ORM                      |
+| Redis           | Rate limiting            |
+| ioredis         | Redis client             |
+| Zod             | Validation               |
+| jose            | JWT authentication       |
+| bcryptjs        | Password hashing         |
 
 ---
 
@@ -159,7 +164,7 @@ Make sure you have:
 * Node.js 20+
 * PostgreSQL
 * Redis
-* Docker *(optional but recommended for local development)*
+* Docker — optional but recommended for local development
 
 ### 1. Clone the Repository
 
@@ -175,6 +180,8 @@ npm install
 ```
 
 ### 3. Configure Environment Variables
+
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
@@ -230,7 +237,9 @@ Email: demo@openagentstudio.dev
 Password: password123
 ```
 
-### 7. Start Development Server
+> For production deployments, replace demo credentials and seed data with secure production configuration.
+
+### 7. Start the Development Server
 
 ```bash
 npm run dev
@@ -247,18 +256,18 @@ http://localhost:3000
 ## 🔑 Environment Variables
 
 | Variable               | Required | Description                             |
-| ---------------------- | -------- | --------------------------------------- |
-| `DATABASE_URL`         | ✅        | PostgreSQL connection string            |
-| `REDIS_URL`            | ✅        | Redis connection used for rate limiting |
-| `AUTH_SECRET`          | ✅        | Signs authentication JWTs               |
-| `ENCRYPTION_SECRET`    | ✅        | Encrypts sensitive provider credentials |
+| ---------------------- | :------: | --------------------------------------- |
+| `DATABASE_URL`         |     ✅    | PostgreSQL connection string            |
+| `REDIS_URL`            |     ✅    | Redis connection used for rate limiting |
+| `AUTH_SECRET`          |     ✅    | Signs authentication JWTs               |
+| `ENCRYPTION_SECRET`    |     ✅    | Encrypts sensitive provider credentials |
 | `GOOGLE_CLIENT_ID`     | Optional | Google OAuth client ID                  |
 | `GOOGLE_CLIENT_SECRET` | Optional | Google OAuth client secret              |
 | `GOOGLE_REDIRECT_URI`  | Optional | Google OAuth callback URL               |
 | `SEARCH_API_KEY`       | Optional | Enables Web Search functionality        |
 | `NEXT_PUBLIC_APP_URL`  | Optional | Production application URL              |
 
-AI provider keys are configured inside the application rather than stored directly as environment variables.
+> AI provider keys are configured inside the application rather than being stored directly as environment variables.
 
 ---
 
@@ -296,19 +305,24 @@ For production, configure:
 * Encryption secret
 * Production application URL
 
-Recommended database providers include services such as Neon, Supabase, or Vercel Postgres, while Redis can be provided through services such as Upstash.
+Recommended infrastructure options include:
+
+* Neon
+* Supabase
+* Vercel Postgres
+* Upstash Redis
 
 ---
 
 ## 🧪 Testing
 
-Run the test suite with:
+Run the test suite:
 
 ```bash
 npm run test
 ```
 
-The tests cover security-critical functionality including:
+Tests cover security-critical functionality including:
 
 * Encryption/decryption
 * API key hashing
@@ -324,7 +338,7 @@ The tests cover security-critical functionality including:
 
 ## 🔒 Security Architecture
 
-Open Agent Studio was designed with several security protections:
+Open Agent Studio follows a layered security architecture:
 
 ```text
 User Input
@@ -344,19 +358,27 @@ Streaming Agent Execution
 
 Sensitive credentials are never returned to the browser.
 
-Outbound user-controlled requests pass through a security-hardened fetch layer that protects against localhost access, private networks, cloud metadata endpoints, DNS rebinding, unsafe redirects, excessive response sizes, and long-running requests.
+Outbound user-controlled requests pass through a security-hardened fetch layer that protects against:
+
+* Localhost access
+* Private networks
+* Cloud metadata endpoints
+* DNS rebinding
+* Unsafe redirects
+* Excessive response sizes
+* Long-running requests
 
 ---
 
 ## ⚠️ Current Limitations
 
-This project is **not yet a fully audited commercial product**.
+Open Agent Studio is currently an active development project and is **not yet a fully audited commercial product**.
 
-Currently:
+Current limitations include:
 
 * Code Execution is disabled.
-* Database Query and Email tools are stubbed.
-* Memory configuration exists, but vector retrieval and cross-session persistence are not implemented.
+* Database Query and Email tools are currently stubbed.
+* Memory configuration exists, but vector retrieval and cross-session persistence are not yet implemented.
 * Human Approval nodes can pause execution but do not currently support resuming through the UI.
 * Tool enable/disable configuration is currently global rather than per-user.
 * A complete live end-to-end test against the deployed Next.js server is still recommended before production use.
@@ -366,8 +388,6 @@ See the project documentation for the complete list of limitations.
 ---
 
 ## 🗺️ Roadmap
-
-Planned improvements include:
 
 * [ ] Production sandbox for Code Execution
 * [ ] Database connector system
@@ -387,33 +407,35 @@ Planned improvements include:
 
 Contributions are welcome!
 
-1. Fork the repository.
-2. Create a feature branch.
+### 1. Fork the repository
+
+### 2. Create a feature branch
 
 ```bash
 git checkout -b feature/your-feature
 ```
 
-3. Make your changes.
-4. Run the tests.
+### 3. Make your changes
+
+### 4. Run the tests
 
 ```bash
 npm run test
 ```
 
-5. Commit your changes.
+### 5. Commit your changes
 
 ```bash
 git commit -m "feat: add your feature"
 ```
 
-6. Push your branch.
+### 6. Push your branch
 
 ```bash
 git push origin feature/your-feature
 ```
 
-7. Open a Pull Request.
+### 7. Open a Pull Request
 
 ---
 
@@ -427,4 +449,8 @@ This project is open source. See the repository license for details.
 
 If you find Open Agent Studio useful, consider giving the repository a ⭐ on GitHub.
 
-Built with ❤️ using **Next.js, TypeScript, PostgreSQL, Prisma, Redis, and AI APIs.**
+Built with ❤️ using Next.js, TypeScript, PostgreSQL, Prisma, Redis, and AI APIs.
+
+### 🌐 Live Demo
+
+https://ai-agent-hub-mu.vercel.app/
