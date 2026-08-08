@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/require-user";
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       encryptedHeaders: encryptSecret(JSON.stringify(parsed.data.headers)),
       headerNames: Object.keys(parsed.data.headers),
       status: test.ok ? "connected" : "error",
-      tools,
+      tools: tools as Prisma.InputJsonValue,
     },
     select: SAFE_SELECT,
   });
