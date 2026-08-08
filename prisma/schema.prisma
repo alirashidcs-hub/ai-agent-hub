@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  WAITING_APPROVAL
+  SUCCESS
+  ERROR
+}
+
+enum DeploymentStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String?
+  googleId      String?   @unique
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  projects      Project[]
+  apiKeys       APIKey[]
+  modelProviders ModelProvider[]
+  mcpServers    MCPServer[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  agents      Agent[]
+}
+
+model Agent {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  template    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  nodes       AgentNode[]
+  edges       AgentEdge[]
+  runs        AgentRun[]
+  deployment  Deployment?
+  memory      Memory?
+  apiKeys     APIKey[]
+}
+
+model AgentNode {
+  id       String @id @default(cuid())
+  agentId  String
+  agent    Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  type     String
+  label    String
+  positionX Float
+  positionY Float
+  config   Json   @default("{}")
+
+  @@index([agentId])
+}
+
+model AgentEdge {
+  id         String @id @default(cuid())
+  agentId    String
+  agent      Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  fromNodeId String
+  fromPort   String @default("next")
+  toNodeId   String
+
+  @@index([agentId])
+}
+
+model Tool {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  icon        String?
+  inputSchema Json     @default("{}")
+  outputSchema Json    @default("{}")
+  enabled     Boolean  @default(true)
+  builtIn     Boolean  @default(true)
+  config      Json     @default("{}")
+  createdAt   DateTime @default(now())
+}
+
+model MCPServer {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name              String
+  url               String
+  // Auth header values are AES-256-GCM encrypted (see lib/crypto.ts) and are
+  // never returned to the client. headerNames stores only the header keys
+  // (e.g. "Authorization") so the UI can show what's configured without
+  // exposing secret values.
+  encryptedHeaders  String   @default("")
+  headerNames       Json     @default("[]")
+  status            String   @default("unknown")
+  tools             Json     @default("[]")
+  createdAt         DateTime @default(now())
+}
+
+model ModelProvider {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider      String   // openai | anthropic | gemini
+  label         String
+  encryptedKey  String
+  // First few characters of the real key (e.g. "sk-ant-…"), stored in the
+  // clear purely for UI recognition. Provider key prefixes are shared
+  // across all customers' keys, so this reveals nothing secret — the
+  // rest of the key is never stored or returned unencrypted.
+  keyPreview    String   @default("")
+  defaultModel  String
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Memory {
+  id              String  @id @default(cuid())
+  agentId         String  @unique
+  agent           Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  shortTerm       Boolean @default(true)
+  conversation    Boolean @default(true)
+  persistent      Boolean @default(false)
+  vectorSearch    Boolean @default(false)
+  embeddingModel  String  @default("text-embedding-3-small")
+  maxContext      Int     @default(8000)
+  retrievalTopK   Int     @default(5)
+}
+
+model Deployment {
+  id          String            @id @default(cuid())
+  agentId     String            @unique
+  agent       Agent             @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  status      DeploymentStatus  @default(ACTIVE)
+  endpointSlug String           @unique
+  createdAt   DateTime          @default(now())
+}
+
+model APIKey {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // When set, this key can only call /api/deploy/{slug}/run for this one
+  // agent. When null, the key is account-wide (any agent the user owns).
+  agentId     String?
+  agent       Agent?    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  name        String
+  keyPrefix   String
+  hashedKey   String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revoked     Boolean   @default(false)
+
+  @@index([agentId])
+}
+
+model AgentRun {
+  id          String     @id @default(cuid())
+  agentId     String
+  agent       Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  status      RunStatus  @default(PENDING)
+  input       Json
+  output      Json?
+  tokensUsed  Int        @default(0)
+  durationMs  Int?
+  error       String?
+  startedAt   DateTime   @default(now())
+  finishedAt  DateTime?
+
+  logs        ExecutionLog[]
+}
+
+model ExecutionLog {
+  id         String   @id @default(cuid())
+  runId      String
+  run        AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  nodeId     String?
+  nodeType   String?
+  event      String
+  message    String?
+  data       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([runId])
+}
